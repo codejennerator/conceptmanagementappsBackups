@@ -1,0 +1,151 @@
+/**
+ * The contents of this file are subject to the OpenMRS Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://license.openmrs.org
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * Copyright (C) OpenMRS, LLC.  All Rights Reserved.
+ */
+package org.openmrs.module.conceptmanagementapps.api;
+
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+
+import java.io.PrintWriter;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.openmrs.Concept;
+import org.openmrs.ConceptClass;
+import org.openmrs.ConceptReferenceTerm;
+import org.openmrs.ConceptSource;
+import org.openmrs.api.APIException;
+import org.openmrs.api.ConceptService;
+import org.openmrs.api.context.Context;
+import org.openmrs.test.BaseContextSensitiveTest;
+import org.openmrs.test.BaseModuleContextSensitiveTest;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Tests {@link $ ConceptManagementAppsService} .
+ */
+public class ConceptManagementAppsServiceTest extends BaseModuleContextSensitiveTest {
+	
+	protected ConceptManagementAppsService conceptManagementAppsService = null;
+	
+	/**
+	 * Run this before each unit test in this class. The "@Before" method in
+	 * {@link BaseContextSensitiveTest} is run right before this method.
+	 * 
+	 * @throws Exception
+	 */
+	@Before
+	public void runBeforeAllTests() throws Exception {
+		conceptManagementAppsService = Context.getService(ConceptManagementAppsService.class);
+	}
+	
+	@Test
+	public void shouldSetupContext() {
+		assertNotNull(Context.getService(ConceptManagementAppsService.class));
+	}
+	
+	@Test
+	public void addNamesToSnomedCTTerms_shouldPassWithoutErrors() throws Exception {
+		conceptManagementAppsService = (ConceptManagementAppsService) Context.getService(ConceptManagementAppsService.class);
+		executeDataSet("concepts.xml");
+		conceptManagementAppsService.setCancelManageSnomedCTProcess(false);
+		URL url = this.getClass().getResource("/snomedFiles");
+		conceptManagementAppsService.startManageSnomedCTProcess("addSnomedCTNames", url.getPath());
+		conceptManagementAppsService.startManageSnomedCTProcess("addSnomedCTAncestors", url.getPath());
+		conceptManagementAppsService.startManageSnomedCTProcess("addSnomedCTRelationships", url.getPath());
+	}
+	/*
+	@Test
+	public void startManageSnomedCTProcess_shouldPassWithoutErrors() throws Exception {
+		
+		//Context.setUserContext(ctx)
+		conceptManagementAppsService = (ConceptManagementAppsService) Context.getService(ConceptManagementAppsService.class);
+		executeDataSet("concepts.xml");
+		ConceptService cs = Context.getConceptService();
+
+		URL url = this.getClass().getResource("/snomedFiles");
+		conceptManagementAppsService.startManageSnomedCTProcess(Context.getUserContext(),"addSnomedCTNames", "/home/jennparise/snomedFiles");
+		System.out.println("letting me move on");
+		
+	}*/
+	/*
+	@Test
+	public void getUnmappedConcepts_getsCorrectNumberOfRows() throws Exception {
+		executeDataSet("concepts.xml");
+		ConceptService cs = Context.getConceptService();
+		List<ConceptClass> classesToInclude = new ArrayList<ConceptClass>();
+		Integer sourceId = 6;
+		classesToInclude.add(cs.getConceptClass(2));
+		classesToInclude.add(cs.getConceptClass(4));
+		classesToInclude.add(cs.getConceptClass(1));
+		
+		conceptManagementAppsService = (ConceptManagementAppsService) Context.getService(ConceptManagementAppsService.class);
+		List<Concept> conceptList = conceptManagementAppsService.getUnmappedConcepts(new ConceptSource(sourceId),
+		    classesToInclude);
+		
+		Assert.assertEquals(7, conceptList.size());
+	}
+	
+	@Test
+	public void getConceptReferenceTerms_getsCorrectNumberOfRows() throws Exception {
+		executeDataSet("concepts.xml");
+		conceptManagementAppsService = (ConceptManagementAppsService) Context.getService(ConceptManagementAppsService.class);
+		List<ConceptReferenceTerm> refTermList = conceptManagementAppsService.getConceptReferenceTerms(null, 0, 5,
+		    "conceptSource", 1);
+		
+		Assert.assertEquals(5, refTermList.size());
+	}
+	
+	@Test
+	public void getConceptReferenceTermsWithQuery_getsCorrectNumberOfRows() throws Exception {
+		executeDataSet("concepts.xml");
+		ConceptService cs = Context.getConceptService();
+		Integer sourceId = 6;
+		
+		conceptManagementAppsService = (ConceptManagementAppsService) Context.getService(ConceptManagementAppsService.class);
+		List<ConceptReferenceTerm> refTermList = conceptManagementAppsService.getConceptReferenceTermsWithQuery("1",
+		    cs.getConceptSource(sourceId), 0, 2, false, "code", 1);
+		Assert.assertEquals(2, refTermList.size());
+	}
+	
+	@Test
+	public void uploadSpreadsheet_shouldPassWithoutErrors() throws Exception {
+		conceptManagementAppsService = (ConceptManagementAppsService) Context.getService(ConceptManagementAppsService.class);
+		final String fileName = "test.csv";
+		String line = "\"map type\",\"source name\",\"source code\",\"concept Id\",\"concept uuid\",\"preferred name\",\"description\",\"class\",\"datatype\",\"all existing mappings\"\n";
+		line += "\"same-as\",\"\",12345,225,\"432AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"MEDICAL EXAMINATION, ROUTINE\",\"Routine examination, without signs of problems.\",\"Procedure\",\"Boolean\",\"SAME-AS AMPATH \n SAME-AS SNOMED MVP\n SAME-AS PIH \n SAME-AS AMPATH \n NARROWER-THAN SNOMED NP\"\n";
+		line += "\"same-as\",\"SNOMED CT\",12345,225,\"432AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"MEDICAL EXAMINATION, ROUTINE\",\"Routine examination, without signs of problems.\",\"Procedure\",\"Boolean\",\"SAME-AS AMPATH \n SAME-AS SNOMED MVP\n SAME-AS PIH \n SAME-AS AMPATH \n NARROWER-THAN SNOMED NP\"\n";
+		line += "\"same-as\",\"SNOMED CT\",12345,225,\"1148AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"TOTAL MATERNAL TO CHILD TRANSMISSION PROPHYLAXIS\",\"Describes the use of drugs to prevent the maternal to child transmission of HIV during pregnancy.\",\"Procedure\",\"Coded\",\"SAME-AS AMPATH \n NARROWER-THAN SNOMED NP \n SAME-AS SNOMED MVP\"\n";
+		final byte[] content = line.getBytes();
+		MockMultipartFile mockMultipartFile = new MockMultipartFile("content", fileName, "text/plain", content);
+		conceptManagementAppsService.uploadSpreadsheet(mockMultipartFile);
+		
+	}
+	
+	@Test
+	public void downloadFileWithMissingConceptMappings_shouldPassWithoutErrors() throws Exception {
+		executeDataSet("concepts.xml");
+		PrintWriter pw = mock(PrintWriter.class);
+		
+		conceptManagementAppsService = (ConceptManagementAppsService) Context.getService(ConceptManagementAppsService.class);
+		List<Concept> conceptList = new ArrayList<Concept>();
+		conceptList.add(Context.getConceptService().getConcept("300"));
+		conceptManagementAppsService.writeFileWithMissingConceptMappings(conceptList, pw, "same-as", "SNOMED CT");
+	}*/
+	
+}
